@@ -1,82 +1,110 @@
 #ifndef MATHFUNC_H
 #define MATHFUNC_H
-#include <limits.h>
+#include <climits>
+#include <vector>
+#include <stdexcept>
 
 namespace math{
-inline void sum(int &a, int &b, int &c) //суммирование a + b
+class BaseMathClass
 {
-    if (((b > 0) && (a > INT_MAX - b)) ||
-        ((b < 0) && (a < INT_MIN - b))) throw -1;
- c = a + b;
-}
+    //fnum, snum, result
+    public:
+    virtual ~BaseMathClass() = default;
+    virtual int calculate(const std::vector<int>& dataSet) const = 0;
+};
 
-inline void sub(int &a, int &b, int &c) // вычитание
+class SumMath: public BaseMathClass
 {
-    if ((b < 0 && a > INT_MAX + b) ||
-        (b > 0 && a < INT_MIN + b))  throw -1;
-c = a - b;
-}
+    public:
+    int calculate(const std::vector<int>& dataSet) const override
+    {
+    if (((dataSet.at(1) > 0) && (dataSet.at(0) > INT_MAX - dataSet.at(1))) ||
+        ((dataSet.at(1) < 0) && (dataSet.at(0) < INT_MIN - dataSet.at(1))))
+        throw std::invalid_argument("invalid input");
+    return dataSet.at(0) + dataSet.at(1);
+    }
+};
 
-inline void mul(int &a, int &b, int &c) // умножение
+class SubMath: public BaseMathClass
 {
-    if (a > 0) {
-        if (b > 0 && a > INT_MAX / b) throw -1;
-        if (b < 0 && b < INT_MIN / a) throw -1;
+    public:
+    inline int calculate(const std::vector<int>& dataSet) const override
+    {
+        if ((dataSet.at(1) < 0 && dataSet.at(0) > INT_MAX + dataSet.at(1)) ||
+        (dataSet.at(1) > 0 && dataSet.at(0) < INT_MIN + dataSet.at(1)))
+        throw std::invalid_argument("invalid input");
+        return dataSet.at(0) - dataSet.at(1);
+    }
+};
+
+class MulMath: public BaseMathClass
+{
+    public:
+    inline int calculate(const std::vector<int>& dataSet) const override
+    {
+    if (dataSet.at(0) > 0) {
+        if (dataSet.at(1) > 0 && dataSet.at(0) > INT_MAX / dataSet.at(1)) throw std::invalid_argument("invalid input");
+        if (dataSet.at(1) < 0 && dataSet.at(1) < INT_MIN / dataSet.at(0)) throw std::invalid_argument("invalid input");
     }
 
-    if (a < 0) {
-        if (b > 0 && a < INT_MIN / b) throw -1;
-        if (b < 0 && a < INT_MAX / b) throw -1;
+    if (dataSet.at(0) < 0) {
+        if (dataSet.at(1) > 0 && dataSet.at(0) < INT_MIN / dataSet.at(1)) throw std::invalid_argument("invalid input");
+        if (dataSet.at(1) < 0 && dataSet.at(0) < INT_MAX / dataSet.at(1)) throw std::invalid_argument("invalid input");
     }
-c = a * b;
-}
+    return dataSet.at(0) * dataSet.at(1);
+    }
+};
 
-inline void div(int &a, int &b, int &c) // деление
+class DivMath: public BaseMathClass
 {
-    if (b == 0) throw -1.1;
-    if (a == INT_MIN && b == -1) throw -1;
-c = a / b;
-}
+    public:
+    inline int calculate(const std::vector<int>& dataSet) const override
+    {
+    if (dataSet.at(0) == 0) throw  std::runtime_error("division by zero");;
+    if (dataSet.at(0) == INT_MIN && dataSet.at(1) == -1) throw std::invalid_argument("invalid input");
+    return dataSet.at(0) / dataSet.at(1);
+    }
+};
 
-inline void max(int &base, int &exp, int &c) //возведение в степень
+class MaxMath: public BaseMathClass
 {
-    if (exp < 0) throw -1;
+    public:
+    inline int calculate(const std::vector<int>& dataSet) const override
+    {
+    if (dataSet.at(1) < 0) throw std::invalid_argument("invalid input");
 
     int result = 1;
 
-    for (int i = 0; i < exp; i++)
+    for (int i = 0; i < dataSet.at(1); i++)
     {
-        if (base != 0 && result > INT_MAX / base) throw -1;
+        if (dataSet.at(0) != 0 && result > INT_MAX / dataSet.at(0)) throw std::invalid_argument("invalid input");
 
-        if (base != 0 && result < INT_MIN / base) throw -1;
+        if (dataSet.at(0) != 0 && result < INT_MIN / dataSet.at(0)) throw std::invalid_argument("invalid input");
 
-        result = result * base;
+        result = result * dataSet.at(0);
     }
-    c = result;
+    return result;
+    }
 
-}
+};
 
-inline int fact(int n) // факториал
-{
-    if(n > 12) throw -1;
-    if(n < 0) throw -1;
+class FactMath : public BaseMathClass {
+ public:
+  int calculate(const std::vector<int>& dataSet) const override {
+    if (dataSet.size() != 1) throw std::invalid_argument("invalid input");
+    int n = dataSet.at(0);
+    if (n < 0) throw std::invalid_argument("invalid input");
+    if (n > 12) throw std::overflow_error("Factorial overflow");
+    return factorialHelper(n);
+  }
 
-    if (n < 0)
-        return -1;
-
-    if (n == 0 || n == 1)
-        return 1;
-
-    int prev = fact(n - 1);
-
-    if (prev == -1)
-        return -1;
-
-    if (prev > INT_MAX / n)
-        return -1;
-
+ private:
+  int factorialHelper(int n) const {
+    if (n == 0 || n == 1) return 1;
+    int prev = factorialHelper(n - 1);
+    if (prev > INT_MAX / n) throw std::overflow_error("Factorial overflow");
     return n * prev;
+  }
+};
 }
-}
-
 #endif
